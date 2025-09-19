@@ -1,0 +1,1816 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FIRE - School Performance Dashboard</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3/package/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            font-size: 3rem;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .logo p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .dashboard {
+            display: none;
+            min-height: 100vh;
+            background: #f8f9fa;
+        }
+
+        .header {
+            background: white;
+            padding: 15px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 2rem;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logout-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .main-content {
+            display: flex;
+            min-height: calc(100vh - 80px);
+        }
+
+        .sidebar {
+            width: 250px;
+            background: white;
+            padding: 20px 0;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .nav-item {
+            padding: 15px 30px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: #f8f9ff;
+            border-left-color: #667eea;
+            color: #667eea;
+        }
+
+        .content-area {
+            flex: 1;
+            padding: 30px;
+        }
+
+        .content-section {
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-left: 4px solid #667eea;
+        }
+
+        .stat-card h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .stat-description {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .school-selector {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .school-selector select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .notice-board {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .notice-header {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .notice-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .notice-date {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .notice-text {
+            color: #333;
+            font-weight: 500;
+        }
+
+        .data-table {
+            width: 100%;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .data-table th {
+            background: #f8f9fa;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .data-table td {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .action-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-good {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-poor {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .profile-tab {
+            display: none;
+        }
+
+        .profile-tab.active {
+            display: block;
+        }
+
+        .profile-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .profile-info {
+            flex: 1;
+        }
+
+        .profile-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .profile-id {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .profile-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .edit-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .attendance-calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin-top: 20px;
+        }
+
+        .calendar-day {
+            padding: 10px;
+            text-align: center;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+
+        .calendar-present {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .calendar-absent {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .calendar-weekend {
+            background: #f8f9fa;
+            color: #666;
+        }
+
+        .video-container {
+            position: relative;
+            width: 640px;
+            height: 480px;
+            margin: 20px 0;
+        }
+
+        #video {
+            width: 100%;
+            height: 100%;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+
+        .canvas-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .recognition-result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .recognition-status {
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .status-present {
+            color: #28a745;
+        }
+
+        .status-absent {
+            color: #dc3545;
+        }
+
+        .status-unknown {
+            color: #ffc107;
+        }
+
+        .qr-container {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        #qrCode {
+            margin: 10px auto;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .video-container {
+                width: 100%;
+                height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Page -->
+    <div id="loginPage" class="login-container">
+        <div class="login-box">
+            <div class="logo">
+                <h1>FIRE</h1>
+                <p>Faculty Information & Resource Evaluation</p>
+            </div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Administrator ID</label>
+                    <input type="text" id="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required>
+                </div>
+                <button type="submit" class="login-btn">Login to Dashboard</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard" class="dashboard">
+        <header class="header">
+            <h1>FIRE</h1>
+            <div class="user-info">
+                <span id="welcomeText">Welcome, Administrator</span>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="nav-item active" onclick="showSection('overview')">📊 Overview</div>
+                <div class="nav-item" onclick="showSection('performance')">📈 School Performance</div>
+                <div class="nav-item" onclick="showSection('attendance')">👥 Attendance</div>
+                <div class="nav-item" onclick="showSection('faculty')">👩‍🏫 Faculty Management</div>
+                <div class="nav-item" onclick="showSection('profiles')">👤 Profile Management</div>
+                <div class="nav-item" onclick="showSection('recognition')">🎥 Live Recognition</div>
+                <div class="nav-item" onclick="showSection('enrollment')">🎯 Enrollment Strategies</div>
+                <div class="nav-item" onclick="showSection('notices')">📢 Notice Board</div>
+            </div>
+
+            <div class="content-area">
+                <!-- Overview Section -->
+                <div id="overview" class="content-section active">
+                    <h2 style="margin-bottom: 20px;">System Overview</h2>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3>Total Schools</h3>
+                            <div class="stat-value">24</div>
+                            <div class="stat-description">Schools under monitoring</div>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Average Gender Ratio</h3>
+                            <div class="stat-value">62:38</div>
+                            <div class="stat-description">Female:Male ratio</div>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Overall Attendance</h3>
+                            <div class="stat-value">87.5%</div>
+                            <div class="stat-description">Average across all schools</div>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Faculty on Leave</h3>
+                            <div class="stat-value">12</div>
+                            <div class="stat-description">Currently unavailable</div>
+                        </div>
+                    </div>
+
+                    <div class="chart-container">
+                        <h3>Recent Performance Trends</h3>
+                        <p>System-wide improvements in the last quarter with 15% increase in student enrollment and 8% improvement in faculty attendance.</p>
+                    </div>
+                </div>
+
+                <!-- Performance Section -->
+                <div id="performance" class="content-section">
+                    <h2 style="margin-bottom: 20px;">School Performance Analysis</h2>
+                    
+                    <div class="school-selector">
+                        <label for="schoolSelect">Select School:</label>
+                        <select id="schoolSelect" onchange="updatePerformanceData()">
+                            <option value="greenfield">Greenfield High School</option>
+                            <option value="riverside">Riverside Academy</option>
+                            <option value="oakmont">Oakmont Public School</option>
+                            <option value="hillcrest">Hillcrest Elementary</option>
+                        </select>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3>Gender Ratio</h3>
+                            <div class="stat-value" id="genderRatio">58:42</div>
+                            <div class="stat-description">Female:Male students</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 58%"></div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Student Attendance</h3>
+                            <div class="stat-value" id="studentAttendance">92.3%</div>
+                            <div class="stat-description">Last 30 days average</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 92%"></div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Faculty Attendance</h3>
+                            <div class="stat-value" id="facultyAttendance">96.7%</div>
+                            <div class="stat-description">Last 30 days average</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 97%"></div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Total Enrollment</h3>
+                            <div class="stat-value" id="totalEnrollment">1,247</div>
+                            <div class="stat-description">Current academic year</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attendance Section -->
+                <div id="attendance" class="content-section">
+                    <h2 style="margin-bottom: 20px;">Attendance Management</h2>
+                    
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>School Name</th>
+                                <th>Student Attendance</th>
+                                <th>Faculty Attendance</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Greenfield High School</td>
+                                <td>92.3%</td>
+                                <td>96.7%</td>
+                                <td><span class="status-badge status-good">Excellent</span></td>
+                                <td><button class="action-btn">View Details</button></td>
+                            </tr>
+                            <tr>
+                                <td>Riverside Academy</td>
+                                <td>88.9%</td>
+                                <td>94.2%</td>
+                                <td><span class="status-badge status-good">Good</span></td>
+                                <td><button class="action-btn">View Details</button></td>
+                            </tr>
+                            <tr>
+                                <td>Oakmont Public School</td>
+                                <td>76.5%</td>
+                                <td>89.3%</td>
+                                <td><span class="status-badge status-warning">Needs Attention</span></td>
+                                <td><button class="action-btn">View Details</button></td>
+                            </tr>
+                            <tr>
+                                <td>Hillcrest Elementary</td>
+                                <td>85.2%</td>
+                                <td>91.8%</td>
+                                <td><span class="status-badge status-good">Good</span></td>
+                                <td><button class="action-btn">View Details</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Faculty Section -->
+                <div id="faculty" class="content-section">
+                    <h2 style="margin-bottom: 20px;">Faculty Management</h2>
+                    
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>School Name</th>
+                                <th>Total Faculty</th>
+                                <th>On Leave</th>
+                                <th>Leave Type</th>
+                                <th>Return Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Greenfield High School</td>
+                                <td>45</td>
+                                <td>2</td>
+                                <td>Medical</td>
+                                <td>Oct 15, 2025</td>
+                                <td><span class="status-badge status-good">Normal</span></td>
+                            </tr>
+                            <tr>
+                                <td>Riverside Academy</td>
+                                <td>38</td>
+                                <td>1</td>
+                                <td>Maternity</td>
+                                <td>Dec 20, 2025</td>
+                                <td><span class="status-badge status-good">Normal</span></td>
+                            </tr>
+                            <tr>
+                                <td>Oakmont Public School</td>
+                                <td>52</td>
+                                <td>6</td>
+                                <td>Various</td>
+                                <td>Various</td>
+                                <td><span class="status-badge status-warning">High Leave Rate</span></td>
+                            </tr>
+                            <tr>
+                                <td>Hillcrest Elementary</td>
+                                <td>28</td>
+                                <td>1</td>
+                                <td>Personal</td>
+                                <td>Sep 25, 2025</td>
+                                <td><span class="status-badge status-good">Normal</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Profile Management Section -->
+                <div id="profiles" class="content-section">
+                    <h2 style="margin-bottom: 20px;">Profile Management System</h2>
+                    
+                    <!-- Data Management -->
+                    <div class="chart-container" style="margin-bottom: 20px;">
+                        <h3>Data Management</h3>
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                            <input type="file" id="importExcel" accept=".xlsx">
+                            <button class="action-btn" onclick="importFromExcel()">Import from File</button>
+                            <button class="action-btn" onclick="importFromUrl()">Import from OneDrive URL</button>
+                            <button class="action-btn" onclick="exportToExcel()">Export to Excel (Download)</button>
+                            <p style="font-size: 12px; color: #666; margin: 0;">Note: Updates are downloaded locally. Upload manually to OneDrive to save remotely.</p>
+                        </div>
+                    </div>
+
+                    <!-- Profile Actions -->
+                    <div class="stats-grid" style="margin-bottom: 30px;">
+                        <div class="stat-card" style="cursor: pointer;" onclick="showProfileTab('search')">
+                            <h3>🔍 Search Profiles</h3>
+                            <div class="stat-description">Find student or faculty by ID or name</div>
+                        </div>
+                        <div class="stat-card" style="cursor: pointer;" onclick="showProfileTab('enroll')">
+                            <h3>➕ Enroll New</h3>
+                            <div class="stat-description">Add new student or faculty</div>
+                        </div>
+                        <div class="stat-card" style="cursor: pointer;" onclick="showProfileTab('attendance')">
+                            <h3>📋 Check Attendance</h3>
+                            <div class="stat-description">View attendance records</div>
+                        </div>
+                        <div class="stat-card" style="cursor: pointer;" onclick="showProfileTab('facerecog')">
+                            <h3>👁️ Face Recognition</h3>
+                            <div class="stat-description">Manage face data</div>
+                        </div>
+                    </div>
+
+                    <!-- Search Tab -->
+                    <div id="searchTab" class="profile-tab active">
+                        <div class="chart-container">
+                            <h3>Search Profile by ID or Name</h3>
+                            <div style="display: flex; gap: 10px; margin-bottom: 20px; align-items: center;">
+                                <input type="text" id="searchId" placeholder="Enter Student/Faculty ID or Name" style="flex: 1; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 16px;">
+                                <select id="searchType" style="padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 16px;">
+                                    <option value="student">Student</option>
+                                    <option value="faculty">Faculty</option>
+                                    <option value="all">All</option>
+                                </select>
+                                <button class="action-btn" onclick="searchProfile()">Search</button>
+                            </div>
+                            <div id="searchResults"></div>
+                        </div>
+                    </div>
+
+                    <!-- Enroll Tab -->
+                    <div id="enrollTab" class="profile-tab">
+                        <div class="chart-container">
+                            <h3>Enroll New Person</h3>
+                            <form id="enrollForm" style="display: grid; gap: 15px; max-width: 600px;">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                    <div>
+                                        <label>Type:</label>
+                                        <select id="enrollType" style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px;">
+                                            <option value="student">Student</option>
+                                            <option value="faculty">Faculty</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label>School:</label>
+                                        <select id="enrollSchool" style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px;">
+                                            <option value="greenfield">Greenfield High School</option>
+                                            <option value="riverside">Riverside Academy</option>
+                                            <option value="oakmont">Oakmont Public School</option>
+                                            <option value="hillcrest">Hillcrest Elementary</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                    <div>
+                                        <label>Full Name:</label>
+                                        <input type="text" id="enrollName" required style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px;">
+                                    </div>
+                                    <div>
+                                        <label>Gender:</label>
+                                        <select id="enrollGender" style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px;">
+                                            <option value="female">Female</option>
+                                            <option value="male">Male</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                    <div>
+                                        <label>Date of Birth:</label>
+                                        <input type="date" id="enrollDob" required style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px;">
+                                    </div>
+                                    <div id="enrollGradeDiv">
+                                        <label>Grade/Class:</label>
+                                        <input type="text" id="enrollGrade" placeholder="e.g., 10th Grade" style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px;">
+                                    </div>
+                                    <div id="enrollDeptDiv" style="display: none;">
+                                        <label>Department:</label>
+                                        <input type="text" id="enrollDept" placeholder="e.g., Mathematics" style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px;">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label>Upload Face Image:</label>
+                                    <input type="file" id="enrollFace" accept="image/*" style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px;">
+                                </div>
+                                <button type="submit" class="action-btn" style="width: 200px; justify-self: start;">Enroll Person</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Attendance Tab -->
+                    <div id="attendanceTab" class="profile-tab">
+                        <div class="chart-container">
+                            <h3>Attendance Records</h3>
+                            <div style="display: flex; gap: 10px; margin-bottom: 20px; align-items: center;">
+                                <input type="text" id="attendanceId" placeholder="Enter ID" style="flex: 1; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px;">
+                                <select id="attendanceMonth" style="padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px;">
+                                    <option value="09">September 2025</option>
+                                    <option value="08">August 2025</option>
+                                    <option value="07">July 2025</option>
+                                </select>
+                                <button class="action-btn" onclick="checkAttendance()">Check Attendance</button>
+                            </div>
+                            <div id="attendanceResults"></div>
+                        </div>
+                    </div>
+
+                    <!-- Face Recognition Tab -->
+                    <div id="facerecogTab" class="profile-tab">
+                        <div class="chart-container">
+                            <h3>Face Recognition Management</h3>
+                            <div style="display: flex; gap: 10px; margin-bottom: 20px; align-items: center;">
+                                <input type="text" id="faceId" placeholder="Enter ID to update face" style="flex: 1; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px;">
+                                <input type="file" id="newFaceImage" accept="image/*" style="flex: 1; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px;">
+                                <button class="action-btn" onclick="updateFace()">Update Face</button>
+                            </div>
+                            <div id="faceResults"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Recognition Section -->
+                <div id="recognition" class="content-section">
+                    <h2 style="margin-bottom: 20px;">Live Face Recognition Attendance</h2>
+                    
+                    <div class="chart-container">
+                        <h3>Start Recognition</h3>
+                        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                            <button class="action-btn" onclick="startRecognition()">Start Webcam</button>
+                            <button class="action-btn" onclick="stopRecognition()">Stop Webcam</button>
+                        </div>
+                        <div class="video-container">
+                            <video id="video" autoplay playsinline></video>
+                            <canvas id="overlay" class="canvas-overlay"></canvas>
+                        </div>
+                        <div id="recognitionResult" class="recognition-result"></div>
+                        <p style="font-size: 12px; color: #666;">Note: Face recognition is mocked for demo. In production, host models locally.</p>
+                    </div>
+                    
+                    <div class="qr-container">
+                        <h3>Scan with Phone for Remote Recognition</h3>
+                        <div id="qrCode"></div>
+                        <p>Use your phone camera to scan the QR code above to open the dashboard on mobile for recognition.</p>
+                    </div>
+                </div>
+
+                <!-- Enrollment Section -->
+                <div id="enrollment" class="content-section">
+                    <h2 style="margin-bottom: 20px;">Enrollment Strategies & Gender Ratio Improvement</h2>
+                    
+                    <div class="chart-container">
+                        <h3>Current Initiatives</h3>
+                        <ul style="list-style: none; padding: 0;">
+                            <li style="margin-bottom: 15px; padding: 15px; background: #f8f9ff; border-left: 4px solid #667eea;">
+                                <strong>STEM Programs for Girls:</strong> Specialized science and technology programs to encourage female enrollment in traditionally male-dominated subjects.
+                            </li>
+                            <li style="margin-bottom: 15px; padding: 15px; background: #f8f9ff; border-left: 4px solid #667eea;">
+                                <strong>Community Outreach:</strong> Parent awareness programs highlighting the importance of education for all children regardless of gender.
+                            </li>
+                            <li style="margin-bottom: 15px; padding: 15px; background: #f8f9ff; border-left: 4px solid #667eea;">
+                                <strong>Scholarship Programs:</strong> Need-based scholarships targeting underrepresented genders in specific schools.
+                            </li>
+                            <li style="margin-bottom: 15px; padding: 15px; background: #f8f9ff; border-left: 4px solid #667eea;">
+                                <strong>Infrastructure Improvements:</strong> Enhanced safety measures and facilities to make schools more attractive to all families.
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3>Enrollment Increase</h3>
+                            <div class="stat-value">+15%</div>
+                            <div class="stat-description">This academic year vs last year</div>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Gender Balance Improvement</h3>
+                            <div class="stat-value">+8%</div>
+                            <div class="stat-description">Female enrollment increase</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notices Section -->
+                <div id="notices" class="content-section">
+                    <h2 style="margin-bottom: 20px;">Notice Board</h2>
+                    
+                    <div class="notice-board">
+                        <div class="notice-header">
+                            <h3>Important Announcements</h3>
+                        </div>
+                        <div class="notice-item">
+                            <div class="notice-date">September 18, 2025</div>
+                            <div class="notice-text">Quarterly performance review meeting scheduled for September 25, 2025. All administrators required to attend.</div>
+                        </div>
+                        <div class="notice-item">
+                            <div class="notice-date">September 15, 2025</div>
+                            <div class="notice-text">New gender equality initiative launched. All schools to implement by October 1st, 2025.</div>
+                        </div>
+                        <div class="notice-item">
+                            <div class="notice-date">September 10, 2025</div>
+                            <div class="notice-text">Faculty development workshop on attendance management techniques - Registration now open.</div>
+                        </div>
+                        <div class="notice-item">
+                            <div class="notice-date">September 8, 2025</div>
+                            <div class="notice-text">Updated reporting guidelines for student enrollment data - Please review the new documentation.</div>
+                        </div>
+                        <div class="notice-item">
+                            <div class="notice-date">September 5, 2025</div>
+                            <div class="notice-text">System maintenance scheduled for September 22, 2025 from 2:00 AM to 4:00 AM. Dashboard may be temporarily unavailable.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // OneDrive Excel direct download URL
+        const excelUrl = 'https://onedrive.live.com/download?cid=1A18515EA0ED8925&resid=EScAGE9dXSdErRH6HYBGqjcBPeNh9w8GOJ3FxAgsDv5pMQ%3D&authkey=%21Sg3HJv';
+
+        // Sample profile data (initial, will be overridden by import if possible)
+        let profileData = {
+            students: {
+                'STU001': {
+                    id: 'STU001',
+                    name: 'Sarah Johnson',
+                    type: 'student',
+                    school: 'greenfield',
+                    grade: '10th Grade',
+                    gender: 'female',
+                    dob: '2008-05-15',
+                    attendance: {
+                        '09': { present: 18, absent: 2, total: 20 }
+                    },
+                    photo: null,
+                    faceDescriptor: null
+                },
+                'STU002': {
+                    id: 'STU002',
+                    name: 'Mike Chen',
+                    type: 'student',
+                    school: 'riverside',
+                    grade: '9th Grade',
+                    gender: 'male',
+                    dob: '2009-03-22',
+                    attendance: {
+                        '09': { present: 19, absent: 1, total: 20 }
+                    },
+                    photo: null,
+                    faceDescriptor: null
+                }
+            },
+            faculty: {
+                'FAC001': {
+                    id: 'FAC001',
+                    name: 'Dr. Emily Davis',
+                    type: 'faculty',
+                    school: 'greenfield',
+                    department: 'Mathematics',
+                    gender: 'female',
+                    dob: '1985-08-12',
+                    attendance: {
+                        '09': { present: 19, absent: 1, total: 20 }
+                    },
+                    photo: null,
+                    faceDescriptor: null
+                },
+                'FAC002': {
+                    id: 'FAC002',
+                    name: 'John Williams',
+                    type: 'faculty',
+                    school: 'oakmont',
+                    department: 'Science',
+                    gender: 'male',
+                    dob: '1980-11-30',
+                    attendance: {
+                        '09': { present: 18, absent: 2, total: 20 }
+                    },
+                    photo: null,
+                    faceDescriptor: null
+                }
+            }
+        };
+
+        let videoStream;
+        let faceMatcher;
+        let recognitionInterval;
+        let modelsLoaded = false;
+
+        // Try to load face-api models (may fail without local models folder)
+        Promise.all([
+            faceapi.nets.ssdMobilenetv1.loadFromUri('/models'),
+            faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
+            faceapi.nets.faceRecognitionNet.loadFromUri('/models')
+        ]).then(() => {
+            modelsLoaded = true;
+            console.log('Models loaded');
+            loadFaceMatcher();
+        }).catch(err => {
+            console.error('Error loading models (expected without local setup):', err);
+            modelsLoaded = false;
+        });
+
+        // Function to load face matcher from profileData
+        async function loadFaceMatcher() {
+            const labeledDescriptors = [];
+            for (const profiles of Object.values(profileData)) {
+                for (const p of Object.values(profiles)) {
+                    if (p.faceDescriptor) {
+                        try {
+                            labeledDescriptors.push(
+                                new faceapi.LabeledFaceDescriptors(p.id, [new Float32Array(JSON.parse(p.faceDescriptor))])
+                            );
+                        } catch (e) {
+                            console.warn('Invalid face descriptor for', p.id);
+                        }
+                    }
+                }
+            }
+            if (labeledDescriptors.length > 0) {
+                faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.6);
+            }
+        }
+
+        // Function to start webcam recognition
+        async function startRecognition() {
+            const video = document.getElementById('video');
+            const overlay = document.getElementById('overlay');
+            const resultDiv = document.getElementById('recognitionResult');
+            
+            try {
+                videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = videoStream;
+                
+                video.addEventListener('playing', () => {
+                    overlay.width = video.videoWidth;
+                    overlay.height = video.videoHeight;
+                    const ctx = overlay.getContext('2d');
+                    
+                    recognitionInterval = setInterval(async () => {
+                        ctx.clearRect(0, 0, overlay.width, overlay.height);
+                        
+                        let detections = [];
+                        let bestMatch = { _label: 'unknown', distance: 1 };
+                        
+                        if (modelsLoaded && faceMatcher) {
+                            // Real detection
+                            try {
+                                detections = await faceapi.detectAllFaces(video).withFaceLandmarks().withFaceDescriptors();
+                                if (detections.length > 0) {
+                                    const resizedDetections = faceapi.resizeResults(detections, { width: video.videoWidth, height: video.videoHeight });
+                                    const detection = resizedDetections[0];
+                                    const box = detection.detection.box;
+                                    ctx.strokeStyle = '#00ff00';
+                                    ctx.lineWidth = 2;
+                                    ctx.strokeRect(box.x, box.y, box.width, box.height);
+                                    
+                                    bestMatch = faceMatcher.findBestMatch(detection.descriptor);
+                                }
+                            } catch (err) {
+                                console.error('Detection error:', err);
+                            }
+                        } else {
+                            // Mock detection for demo
+                            if (Math.random() > 0.5) {
+                                const allIds = [...Object.keys(profileData.students), ...Object.keys(profileData.faculty)];
+                                const randomId = allIds[Math.floor(Math.random() * allIds.length)];
+                                bestMatch = { _label: randomId, distance: Math.random() * 0.4 };
+                                // Mock box
+                                const box = { x: 100, y: 100, width: 200, height: 200 };
+                                ctx.strokeStyle = '#00ff00';
+                                ctx.lineWidth = 2;
+                                ctx.strokeRect(box.x, box.y, box.width, box.height);
+                            }
+                        }
+                        
+                        const label = bestMatch._label;
+                        const isMatch = label !== 'unknown' && bestMatch.distance < 0.6;
+                        
+                        resultDiv.innerHTML = `
+                            <div class="recognition-status status-${isMatch ? 'present' : 'unknown'}">
+                                ${isMatch ? 'Present - Verified' : 'Unknown - Absent'}
+                            </div>
+                            <p>Matched ID: ${isMatch ? label : 'None'}</p>
+                            <p>Similarity: ${isMatch ? ((1 - bestMatch.distance) * 100).toFixed(2) : '0'}%</p>
+                        `;
+                        
+                        // Update attendance if matched
+                        if (isMatch) {
+                            updateAttendance(label, 'present');
+                        } else {
+                            updateAttendance('unknown', 'absent');
+                        }
+                    }, 2000);  // Check every 2 seconds for mock/real
+                });
+            } catch (err) {
+                console.error('Error accessing webcam:', err);
+                resultDiv.innerHTML = '<p style="color: #dc3545;">Error accessing camera. Please check permissions.</p>';
+            }
+        }
+
+        function stopRecognition() {
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+            }
+            if (recognitionInterval) {
+                clearInterval(recognitionInterval);
+            }
+            const video = document.getElementById('video');
+            const overlay = document.getElementById('overlay');
+            video.srcObject = null;
+            if (overlay) {
+                const ctx = overlay.getContext('2d');
+                ctx.clearRect(0, 0, overlay.width, overlay.height);
+            }
+            document.getElementById('recognitionResult').innerHTML = '';
+        }
+
+        function updateAttendance(id, status) {
+            if (id !== 'unknown') {
+                // Find profile and update attendance (for demo, update '09' month)
+                for (const profiles of Object.values(profileData)) {
+                    if (profiles[id]) {
+                        let att = profiles[id].attendance['09'];
+                        if (!att) {
+                            att = { present: 0, absent: 0, total: 0 };
+                            profiles[id].attendance['09'] = att;
+                        }
+                        if (status === 'present') {
+                            att.present += 1;
+                        } else {
+                            att.absent += 1;
+                        }
+                        att.total += 1;
+                        exportToExcel();  // Auto-save to Excel
+                        break;
+                    }
+                }
+            }
+        }
+
+        // QR Code for phone access
+        document.addEventListener('DOMContentLoaded', () => {
+            const qrCodeDiv = document.getElementById('qrCode');
+            new QRCode(qrCodeDiv, {
+                text: window.location.href,
+                width: 128,
+                height: 128,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+        });
+
+        // Function to read file as base64
+        function readFileAsBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Profile Management Functions
+        function showProfileTab(tabName) {
+            document.querySelectorAll('.profile-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.getElementById(tabName + 'Tab').classList.add('active');
+        }
+
+        function searchProfile() {
+            const searchValue = document.getElementById('searchId').value.trim().toLowerCase();
+            const searchType = document.getElementById('searchType').value;
+            const resultsDiv = document.getElementById('searchResults');
+            
+            resultsDiv.innerHTML = '';
+            
+            if (!searchValue) {
+                resultsDiv.innerHTML = '<p style="color: #e74c3c;">Please enter an ID or name to search.</p>';
+                return;
+            }
+            
+            let profiles = [];
+            if (searchType === 'student' || searchType === 'all') {
+                profiles = profiles.concat(Object.values(profileData.students));
+            }
+            if (searchType === 'faculty' || searchType === 'all') {
+                profiles = profiles.concat(Object.values(profileData.faculty));
+            }
+            
+            const filteredProfiles = profiles.filter(p => 
+                p.id.toLowerCase().includes(searchValue) || p.name.toLowerCase().includes(searchValue) || (p.school && p.school.toLowerCase().includes(searchValue))
+            );
+            
+            if (filteredProfiles.length > 0) {
+                filteredProfiles.forEach(profile => {
+                    const div = document.createElement('div');
+                    displayProfile(profile, div);
+                    resultsDiv.appendChild(div);
+                });
+            } else {
+                resultsDiv.innerHTML = '<p style="color: #e74c3c;">No results found.</p>';
+            }
+        }
+
+        function displayProfile(profile, container) {
+            const schoolNames = {
+                greenfield: 'Greenfield High School',
+                riverside: 'Riverside Academy',
+                oakmont: 'Oakmont Public School',
+                hillcrest: 'Hillcrest Elementary'
+            };
+            
+            let photoImg = '';
+            if (profile.photo) {
+                photoImg = `<img src="data:image/jpeg;base64,${profile.photo}" style="width:80px; height:80px; border-radius:50%; object-fit: cover;">`;
+            } else {
+                photoImg = `<div class="profile-avatar">${profile.name.charAt(0)}</div>`;
+            }
+            
+            const field = profile.type === 'student' ? 'Grade' : 'Department';
+            const value = profile.grade || profile.department;
+            
+            container.innerHTML = `
+                <div class="profile-card">
+                    <div class="profile-header">
+                        ${photoImg}
+                        <div class="profile-info">
+                            <div class="profile-name">${profile.name}</div>
+                            <div class="profile-id">ID: ${profile.id} | ${profile.type.charAt(0).toUpperCase() + profile.type.slice(1)}</div>
+                            <div style="color: #666; font-size: 14px;">
+                                <strong>School:</strong> ${schoolNames[profile.school] || 'N/A'}<br>
+                                <strong>${field}:</strong> ${value || 'N/A'}<br>
+                                <strong>Gender:</strong> ${profile.gender.charAt(0).toUpperCase() + profile.gender.slice(1)}<br>
+                                <strong>Date of Birth:</strong> ${profile.dob || 'N/A'}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="profile-actions">
+                        <button class="edit-btn" onclick="editProfile('${profile.id}', '${profile.type}')">Edit Profile</button>
+                        <button class="delete-btn" onclick="deleteProfile('${profile.id}', '${profile.type}')">Delete Profile</button>
+                        <button class="action-btn" onclick="viewAttendanceProfile('${profile.id}')">View Attendance</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function editProfile(id, type) {
+            // Basic edit implementation - alert for now, can be expanded to form
+            const newName = prompt(`Edit name for ${type} ${id}:`, profileData[type + 's'][id].name);
+            if (newName) {
+                profileData[type + 's'][id].name = newName;
+                exportToExcel();
+                alert('Profile updated. Refresh search to see changes.');
+            }
+        }
+
+        function deleteProfile(id, type) {
+            if (confirm(`Are you sure you want to delete ${type} ${id}? This action cannot be undone.`)) {
+                delete profileData[type + 's'][id];
+                exportToExcel();
+                alert(`${type} ${id} has been deleted successfully.`);
+                if (faceMatcher) loadFaceMatcher();
+                searchProfile(); // Refresh results
+            }
+        }
+
+        function viewAttendanceProfile(id) {
+            document.getElementById('attendanceId').value = id;
+            showProfileTab('attendance');
+            checkAttendance();
+        }
+
+        function checkAttendance() {
+            const id = document.getElementById('attendanceId').value.trim().toUpperCase();
+            const month = document.getElementById('attendanceMonth').value;
+            const resultsDiv = document.getElementById('attendanceResults');
+            
+            if (!id) {
+                resultsDiv.innerHTML = '<p style="color: #e74c3c;">Please enter an ID.</p>';
+                return;
+            }
+            
+            let profile = profileData.students[id] || profileData.faculty[id];
+            
+            if (profile) {
+                let attendance = profile.attendance[month];
+                if (!attendance) {
+                    attendance = { present: 0, absent: 0, total: 0 };
+                }
+                const percentage = attendance.total > 0 ? ((attendance.present / attendance.total) * 100).toFixed(1) : 0;
+                
+                resultsDiv.innerHTML = `
+                    <div class="profile-card">
+                        <h4>Attendance Record for ${profile.name} (${id})</h4>
+                        <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-top: 20px;">
+                            <div class="stat-card" style="margin: 0;">
+                                <h3>Present Days</h3>
+                                <div class="stat-value" style="color: #28a745;">${attendance.present}</div>
+                            </div>
+                            <div class="stat-card" style="margin: 0;">
+                                <h3>Absent Days</h3>
+                                <div class="stat-value" style="color: #e74c3c;">${attendance.absent}</div>
+                            </div>
+                            <div class="stat-card" style="margin: 0;">
+                                <h3>Attendance Rate</h3>
+                                <div class="stat-value" style="color: #667eea;">${percentage}%</div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 20px;">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${percentage}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                resultsDiv.innerHTML = `<p style="color: #e74c3c;">No profile found for ID: ${id}</p>`;
+            }
+        }
+
+        async function updateFace() {
+            const id = document.getElementById('faceId').value.trim().toUpperCase();
+            const fileInput = document.getElementById('newFaceImage');
+            const resultsDiv = document.getElementById('faceResults');
+            
+            if (!id) {
+                resultsDiv.innerHTML = '<p style="color: #e74c3c;">Please enter an ID.</p>';
+                return;
+            }
+            
+            if (!fileInput.files[0]) {
+                resultsDiv.innerHTML = '<p style="color: #e74c3c;">Please select a face image.</p>';
+                return;
+            }
+            
+            let profile = profileData.students[id] || profileData.faculty[id];
+            
+            if (profile) {
+                try {
+                    const base64 = await readFileAsBase64(fileInput.files[0]);
+                    profile.photo = base64;
+                    profile.faceDescriptor = JSON.stringify(await generateFaceDescriptor(base64));
+                    resultsDiv.innerHTML = `
+                        <div class="profile-card">
+                            <h4>Face Recognition Update</h4>
+                            <p style="color: #28a745; margin-top: 15px;">
+                                ✓ Face data updated successfully for ${profile.name} (${id})<br>
+                                ✓ New face image processed and stored<br>
+                                ✓ Recognition model updated (mock for demo)<br>
+                                ✓ System ready for attendance tracking
+                            </p>
+                        </div>
+                    `;
+                    fileInput.value = '';
+                    document.getElementById('faceId').value = '';
+                    exportToExcel(); // Auto-export after update
+                    loadFaceMatcher(); // Reload matcher
+                } catch (error) {
+                    resultsDiv.innerHTML = '<p style="color: #e74c3c;">Error updating photo: ' + error.message + '</p>';
+                }
+            } else {
+                resultsDiv.innerHTML = `<p style="color: #e74c3c;">No profile found with ID: ${id}</p>`;
+            }
+        }
+
+        // Handle enrollment form
+        document.addEventListener('DOMContentLoaded', function() {
+            const enrollForm = document.getElementById('enrollForm');
+            const enrollType = document.getElementById('enrollType');
+            
+            if (enrollType) {
+                enrollType.addEventListener('change', function() {
+                    const gradeDiv = document.getElementById('enrollGradeDiv');
+                    const deptDiv = document.getElementById('enrollDeptDiv');
+                    
+                    if (this.value === 'faculty') {
+                        gradeDiv.style.display = 'none';
+                        deptDiv.style.display = 'block';
+                    } else {
+                        gradeDiv.style.display = 'block';
+                        deptDiv.style.display = 'none';
+                    }
+                });
+            }
+            
+            if (enrollForm) {
+                enrollForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    const type = document.getElementById('enrollType').value;
+                    const name = document.getElementById('enrollName').value;
+                    const gender = document.getElementById('enrollGender').value;
+                    const school = document.getElementById('enrollSchool').value;
+                    const dob = document.getElementById('enrollDob').value;
+                    const grade = document.getElementById('enrollGrade').value;
+                    const dept = document.getElementById('enrollDept').value;
+                    const file = document.getElementById('enrollFace').files[0];
+                    
+                    // Generate new ID
+                    const prefix = type === 'student' ? 'STU' : 'FAC';
+                    const existingIds = Object.keys(type === 'student' ? profileData.students : profileData.faculty);
+                    const newIdNum = existingIds.length + 1;
+                    const newId = prefix + String(newIdNum).padStart(3, '0');
+                    
+                    // Create new profile
+                    const newProfile = {
+                        id: newId,
+                        name: name,
+                        type: type,
+                        school: school,
+                        gender: gender,
+                        dob: dob,
+                        attendance: {
+                            '09': { present: 0, absent: 0, total: 0 }
+                        },
+                        photo: null,
+                        faceDescriptor: null
+                    };
+                    
+                    if (type === 'student') {
+                        newProfile.grade = grade;
+                    } else {
+                        newProfile.department = dept;
+                    }
+                    
+                    if (file) {
+                        try {
+                            const base64 = await readFileAsBase64(file);
+                            newProfile.photo = base64;
+                            newProfile.faceDescriptor = JSON.stringify(await generateFaceDescriptor(base64));
+                        } catch (error) {
+                            console.warn('Error processing photo for new profile:', error);
+                            // Continue without photo
+                        }
+                    }
+                    
+                    if (type === 'student') {
+                        profileData.students[newId] = newProfile;
+                    } else {
+                        profileData.faculty[newId] = newProfile;
+                    }
+                    
+                    alert(`${type.charAt(0).toUpperCase() + type.slice(1)} enrolled successfully!\nNew ID: ${newId}`);
+                    enrollForm.reset();
+                    exportToExcel(); // Auto-export after enroll
+                    loadFaceMatcher(); // Reload matcher
+                });
+            }
+        });
+
+        function exportToExcel() {
+            const wb = XLSX.utils.book_new();
+            
+            // Students sheet
+            const studentsHeader = ['ID', 'Name', 'School', 'Grade', 'Gender', 'DOB', 'Attendance', 'PhotoBase64', 'FaceDescriptor'];
+            const studentsData = [studentsHeader];
+            Object.values(profileData.students).forEach(p => {
+                studentsData.push([
+                    p.id,
+                    p.name,
+                    p.school,
+                    p.grade || '',
+                    p.gender,
+                    p.dob,
+                    JSON.stringify(p.attendance),
+                    p.photo || '',
+                    p.faceDescriptor || ''
+                ]);
+            });
+            const wsStudents = XLSX.utils.aoa_to_sheet(studentsData);
+            XLSX.utils.book_append_sheet(wb, wsStudents, 'Students');
+            
+            // Faculty sheet
+            const facultyHeader = ['ID', 'Name', 'School', 'Department', 'Gender', 'DOB', 'Attendance', 'PhotoBase64', 'FaceDescriptor'];
+            const facultyData = [facultyHeader];
+            Object.values(profileData.faculty).forEach(p => {
+                facultyData.push([
+                    p.id,
+                    p.name,
+                    p.school,
+                    p.department || '',
+                    p.gender,
+                    p.dob,
+                    JSON.stringify(p.attendance),
+                    p.photo || '',
+                    p.faceDescriptor || ''
+                ]);
+            });
+            const wsFaculty = XLSX.utils.aoa_to_sheet(facultyData);
+            XLSX.utils.book_append_sheet(wb, wsFaculty, 'Faculty');
+            
+            XLSX.writeFile(wb, 'profiles.xlsx');
+        }
+
+        async function importFromExcel() {
+            const fileInput = document.getElementById('importExcel');
+            const file = fileInput.files[0];
+            if (!file) {
+                alert('Please select an Excel file.');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = e.target.result;
+                const wb = XLSX.read(data, {type: 'binary'});
+                
+                // Import Students
+                const wsStudents = wb.Sheets['Students'];
+                if (wsStudents) {
+                    const studentsArray = XLSX.utils.sheet_to_json(wsStudents, {header:1});
+                    if (studentsArray.length > 0) studentsArray.shift(); // remove header
+                    profileData.students = {};
+                    studentsArray.forEach(row => {
+                        if (row[0]) { // Check if ID exists
+                            const p = {
+                                id: row[0],
+                                name: row[1],
+                                school: row[2],
+                                grade: row[3],
+                                gender: row[4],
+                                dob: row[5],
+                                attendance: row[6] ? JSON.parse(row[6]) : {},
+                                photo: row[7] || null,
+                                faceDescriptor: row[8] || null
+                            };
+                            profileData.students[p.id] = p;
+                        }
+                    });
+                }
+                
+                // Import Faculty
+                const wsFaculty = wb.Sheets['Faculty'];
+                if (wsFaculty) {
+                    const facultyArray = XLSX.utils.sheet_to_json(wsFaculty, {header:1});
+                    if (facultyArray.length > 0) facultyArray.shift();
+                    profileData.faculty = {};
+                    facultyArray.forEach(row => {
+                        if (row[0]) {
+                            const p = {
+                                id: row[0],
+                                name: row[1],
+                                school: row[2],
+                                department: row[3],
+                                gender: row[4],
+                                dob: row[5],
+                                attendance: row[6] ? JSON.parse(row[6]) : {},
+                                photo: row[7] || null,
+                                faceDescriptor: row[8] || null
+                            };
+                            profileData.faculty[p.id] = p;
+                        }
+                    });
+                }
+                
+                alert('Data imported successfully from file.');
+                fileInput.value = '';
+                loadFaceMatcher();
+                if (document.getElementById('searchTab').classList.contains('active')) {
+                    searchProfile();
+                }
+            };
+            reader.readAsBinaryString(file);
+        }
+
+        async function importFromUrl() {
+            try {
+                const response = await fetch(excelUrl);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                const arrayBuffer = await response.arrayBuffer();
+                const wb = XLSX.read(new Uint8Array(arrayBuffer), {type: 'array'});
+                
+                // Same import logic as importFromExcel
+                const wsStudents = wb.Sheets['Students'];
+                if (wsStudents) {
+                    const studentsArray = XLSX.utils.sheet_to_json(wsStudents, {header:1});
+                    if (studentsArray.length > 0) studentsArray.shift();
+                    profileData.students = {};
+                    studentsArray.forEach(row => {
+                        if (row[0]) {
+                            const p = {
+                                id: row[0],
+                                name: row[1],
+                                school: row[2],
+                                grade: row[3],
+                                gender: row[4],
+                                dob: row[5],
+                                attendance: row[6] ? JSON.parse(row[6]) : {},
+                                photo: row[7] || null,
+                                faceDescriptor: row[8] || null
+                            };
+                            profileData.students[p.id] = p;
+                        }
+                    });
+                }
+                
+                const wsFaculty = wb.Sheets['Faculty'];
+                if (wsFaculty) {
+                    const facultyArray = XLSX.utils.sheet_to_json(wsFaculty, {header:1});
+                    if (facultyArray.length > 0) facultyArray.shift();
+                    profileData.faculty = {};
+                    facultyArray.forEach(row => {
+                        if (row[0]) {
+                            const p = {
+                                id: row[0],
+                                name: row[1],
+                                school: row[2],
+                                department: row[3],
+                                gender: row[4],
+                                dob: row[5],
+                                attendance: row[6] ? JSON.parse(row[6]) : {},
+                                photo: row[7] || null,
+                                faceDescriptor: row[8] || null
+                            };
+                            profileData.faculty[p.id] = p;
+                        }
+                    });
+                }
+                
+                alert('Data imported successfully from OneDrive URL.');
+                loadFaceMatcher();
+                if (document.getElementById('searchTab').classList.contains('active')) {
+                    searchProfile();
+                }
+            } catch (error) {
+                alert('Error importing from URL: ' + error.message + '\nPlease ensure the link is public and direct download works.');
+            }
+        }
+
+        async function generateFaceDescriptor(imageBase64) {
+            if (modelsLoaded) {
+                const img = await faceapi.bufferToImage(await base64ToBlob(imageBase64));
+                const detection = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor();
+                return detection ? Array.from(detection.descriptor) : null;
+            } else {
+                // Mock descriptor for demo
+                return Array.from({length: 128}, () => Math.random() * 2 - 1);
+            }
+        }
+
+        function base64ToBlob(base64) {
+            const byteString = atob(base64);
+            const ab = new ArrayBuffer(byteString.length);
+            const ia = new Uint8Array(ab);
+            for (let i = 0; i < byteString.length; i++) {
+                ia[i] = byteString.charCodeAt(i);
+            }
+            return new Blob([ab], {type: 'image/jpeg'});
+        }
+
+        const schoolData = {
+            greenfield: {
+                genderRatio: "58:42",
+                studentAttendance: "92.3%",
+                facultyAttendance: "96.7%",
+                totalEnrollment: "1,247"
+            },
+            riverside: {
+                genderRatio: "63:37",
+                studentAttendance: "88.9%",
+                facultyAttendance: "94.2%",
+                totalEnrollment: "892"
+            },
+            oakmont: {
+                genderRatio: "55:45",
+                studentAttendance: "76.5%",
+                facultyAttendance: "89.3%",
+                totalEnrollment: "1,543"
+            },
+            hillcrest: {
+                genderRatio: "68:32",
+                studentAttendance: "85.2%",
+                facultyAttendance: "91.8%",
+                totalEnrollment: "654"
+            }
+        };
+
+        // Login functionality
+        function handleLogin(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            
+            if (username.length > 0 && password.length > 0) {
+                document.getElementById('loginPage').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+                document.getElementById('welcomeText').textContent = `Welcome, ${username}`;
+            } else {
+                alert('Please enter both username and password');
+            }
+        }
+
+        // Add event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginForm = document.getElementById('loginForm');
+            if (loginForm) {
+                loginForm.addEventListener('submit', handleLogin);
+            }
+            updatePerformanceData();
+        });
+
+        // Navigation functionality
+        function showSection(sectionId) {
+            document.querySelectorAll('.content-section').forEach(section => section.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Update performance data based on selected school
+        function updatePerformanceData() {
+            const selectedSchool = document.getElementById('schoolSelect').value;
+            const data = schoolData[selectedSchool];
+            
+            document.getElementById('genderRatio').textContent = data.genderRatio;
+            document.getElementById('studentAttendance').textContent = data.studentAttendance;
+            document.getElementById('facultyAttendance').textContent = data.facultyAttendance;
+            document.getElementById('totalEnrollment').textContent = data.totalEnrollment;
+            
+            // Update progress bars (note: selectors may need adjustment if multiple sections)
+            const progressFills = document.querySelectorAll('#performance .progress-fill');
+            if (progressFills.length >= 3) {
+                const genderPercentage = parseInt(data.genderRatio.split(':')[0]);
+                const studentAttendancePercentage = parseInt(data.studentAttendance);
+                const facultyAttendancePercentage = parseInt(data.facultyAttendance);
+                
+                progressFills[0].style.width = genderPercentage + '%';
+                progressFills[1].style.width = studentAttendancePercentage + '%';
+                progressFills[2].style.width = facultyAttendancePercentage + '%';
+            }
+        }
+
+        // Logout functionality
+        function logout() {
+            document.getElementById('dashboard').style.display = 'none';
+            document.getElementById('loginPage').style.display = 'flex';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+        }
+    </script>
+</body>
+</html>
+```
